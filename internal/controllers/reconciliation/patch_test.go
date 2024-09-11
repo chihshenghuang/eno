@@ -222,7 +222,6 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 	// Test configmap setup
 	cmName := "test-obj"
 	cmNamespace := "default"
-	key := "foo"
 	newVal := "baz"
 	cm := &corev1.ConfigMap{}
 	cm.Name = cmName
@@ -265,7 +264,7 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 					"name":      cmName,
 					"namespace": cmNamespace,
 					"annotations": map[string]string{
-						key:                            newVal,
+						"foo":                          newVal,
 						"eno.azure.io/readiness-group": "2",
 					},
 				},
@@ -298,5 +297,5 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 	upgradeTime := cm.GetCreationTimestamp()
 	// Check the configmap is updated with new creationTime.
 	require.True(t, createTime.Before(&upgradeTime))
-	require.Equal(t, newVal, cm.GetAnnotations()[key])
+	require.Equal(t, newVal, cm.GetAnnotations()["foo"])
 }
