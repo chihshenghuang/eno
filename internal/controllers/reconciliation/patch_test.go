@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	apiv1 "github.com/Azure/eno/api/v1"
 	testv1 "github.com/Azure/eno/internal/controllers/reconciliation/fixtures/v1"
@@ -284,6 +285,10 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 	// Create configmap first before the patch is applied.
 	require.NoError(t, downstream.Create(ctx, cm))
 	createTime := cm.GetCreationTimestamp()
+	createResourceVersion := cm.GetResourceVersion()
+	// Wait for short period to make sure the createTimestamp is different when update configmap,
+	// or it fails to pass k8s compatibility test sometimes.
+	time.Sleep(100 * time.Millisecond)
 
 	ccm, _ := json.Marshal(cm)
 	t.Logf("create ConfigMap: %s", string(ccm))
@@ -307,7 +312,9 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 	ucm, _ := json.Marshal(cm)
 	t.Logf("update ConfigMap: %s", string(ucm))
 	upgradeTime := cm.GetCreationTimestamp()
-	// Check the configmap is updated with new creationTime.
+	upgradeResourceVersion := cm.GetResourceVersion()
+	// Check the configmap is updated with new creationTime and resourceVersion.
 	require.True(t, createTime.Before(&upgradeTime))
 	require.Equal(t, newVal, cm.GetAnnotations()["foo"])
+	require.NotEqual(t, createResourceVersion, upgradeResourceVersion)
 }
