@@ -227,8 +227,8 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 	cm.Name = cmName
 	cm.Namespace = cmNamespace
 	cm.Annotations = map[string]string{
-		"foo":                          "bar",
-		"eno.azure.io/readiness-group": "2",
+		"foo": "bar",
+		// "eno.azure.io/readiness-group": "2",
 	}
 
 	registerControllers(t, mgr)
