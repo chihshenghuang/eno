@@ -2,6 +2,7 @@ package reconciliation
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	apiv1 "github.com/Azure/eno/api/v1"
@@ -227,8 +228,8 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 	cm.Name = cmName
 	cm.Namespace = cmNamespace
 	cm.Annotations = map[string]string{
-		"foo": "bar",
-		// "eno.azure.io/readiness-group": "2",
+		"foo":                          "bar",
+		"eno.azure.io/readiness-group": "2",
 	}
 
 	registerControllers(t, mgr)
@@ -284,16 +285,27 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 	require.NoError(t, downstream.Create(ctx, cm))
 	createTime := cm.GetCreationTimestamp()
 
+	ccm, _ := json.Marshal(cm)
+	t.Logf("create ConfigMap: %s", string(ccm))
+
 	// Syntheizer create patch and new change apply to the existing configmap.
 	_, comp := writeGenericComposition(t, upstream)
+	ccomp, _ := json.Marshal(comp)
+	t.Logf("create comp: %s", string(ccomp))
 
 	testutil.Eventually(t, func() bool {
 		err := upstream.Get(ctx, client.ObjectKeyFromObject(comp), comp)
 		return err == nil && comp.Status.CurrentSynthesis != nil && comp.Status.CurrentSynthesis.Reconciled != nil
 	})
 
+	ncomp, _ := json.Marshal(comp)
+	t.Logf("new comp: %s", string(ncomp))
+
 	err := downstream.Get(ctx, client.ObjectKeyFromObject(cm), cm)
 	require.NoError(t, err)
+
+	ucm, _ := json.Marshal(cm)
+	t.Logf("update ConfigMap: %s", string(ucm))
 	upgradeTime := cm.GetCreationTimestamp()
 	// Check the configmap is updated with new creationTime.
 	require.True(t, createTime.Before(&upgradeTime))
