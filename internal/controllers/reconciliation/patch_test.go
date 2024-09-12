@@ -288,7 +288,7 @@ func TestPatchDeletionBeforeUpgrade(t *testing.T) {
 	createResourceVersion := cm.GetResourceVersion()
 	// Wait for short period to make sure the createTimestamp is different when update configmap,
 	// or it might have same createTimestamp and fail to pass k8s compatibility test sometimes.
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1500 * time.Millisecond)
 
 	ccm, _ := json.Marshal(cm)
 	t.Logf("create ConfigMap: %s", string(ccm))
