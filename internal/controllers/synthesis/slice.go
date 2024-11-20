@@ -24,11 +24,6 @@ type sliceController struct {
 	client client.Client
 }
 
-type request struct {
-	NamespacedName types.NamespacedName
-	Owner          string
-}
-
 // sliceController check if the resource slice is deleted but it is still present in the composition status.
 // If yes, then it will update the composition status to trigger re-synthesis process.
 func NewSliceController(mgr ctrl.Manager) error {
@@ -36,6 +31,7 @@ func NewSliceController(mgr ctrl.Manager) error {
 		client: mgr.GetClient(),
 	}
 	return ctrl.NewControllerManagedBy(mgr).
+		Named("synthesisSliceController").
 		Watches(&apiv1.ResourceSlice{}, newSliceHandler()).
 		WithLogConstructor(manager.NewLogConstructor(mgr, "sliceController")).
 		Complete(c)
@@ -79,6 +75,7 @@ func (s *sliceController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			if err != nil {
 				return ctrl.Result{}, fmt.Errorf("swapping compisition state: %w", err)
 			}
+			return ctrl.Result{}, nil
 		}
 
 		if client.IgnoreNotFound(err) != nil {
