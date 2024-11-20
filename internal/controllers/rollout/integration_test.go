@@ -139,7 +139,7 @@ func TestRolloutIgnoreSideEffects(t *testing.T) {
 
 	testutil.Eventually(t, func() bool {
 		require.NoError(t, cli.Get(ctx, client.ObjectKeyFromObject(comp), comp))
-		return comp.Status.CurrentSynthesis != nil && isInSync(comp, syn)
+		return comp.Status.CurrentSynthesis != nil && comp.IsInSync(syn)
 	})
 
 	// Update the synthesizer while honoring side effects.
@@ -155,7 +155,7 @@ func TestRolloutIgnoreSideEffects(t *testing.T) {
 	// This time the rollout is observed.
 	testutil.Eventually(t, func() bool {
 		require.NoError(t, cli.Get(ctx, client.ObjectKeyFromObject(comp), comp))
-		return comp.Status.CurrentSynthesis != nil && isInSync(comp, syn)
+		return comp.Status.CurrentSynthesis != nil && comp.IsInSync(syn)
 	})
 }
 

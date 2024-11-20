@@ -64,21 +64,7 @@ func (c *synthController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			"compositionGeneration", comp.Generation,
 			"synthesisID", comp.Status.GetCurrentSynthesisUUID())
 
-		// Compositions aren't eligible to receive an updated synthesizer when:
-		// - They haven't ever been synthesized (they'll use the latest inputs anyway)
-		// - They are already on the latest version of the synthesizer
-		// - They are currently being synthesized or deleted
-		// - They are already pending resynthesis
-		// - They are already in sync with the latest synth
-		// - Their input revisions are not in lockstep
-		// - They're ignoring side effects
-		if comp.Status.CurrentSynthesis == nil ||
-			comp.Status.CurrentSynthesis.Synthesized == nil ||
-			comp.DeletionTimestamp != nil ||
-			comp.Status.PendingResynthesis != nil ||
-			isInSync(&comp, syn) ||
-			comp.InputsOutOfLockstep(syn) ||
-			comp.ShouldIgnoreSideEffects() {
+		if comp.NotEligibleForResynthesis(syn) {
 			continue
 		}
 
@@ -93,10 +79,6 @@ func (c *synthController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func isInSync(comp *apiv1.Composition, syn *apiv1.Synthesizer) bool {
-	return comp.Status.CurrentSynthesis.ObservedSynthesizerGeneration >= syn.Generation
 }
 
 func newCompositionHandler() handler.EventHandler {

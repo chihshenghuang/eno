@@ -214,3 +214,25 @@ func (s *CompositionStatus) GetCurrentSynthesisUUID() string {
 func (c *Composition) ShouldIgnoreSideEffects() bool {
 	return c.Annotations["eno.azure.io/ignore-side-effects"] == "true"
 }
+
+// Compositions aren't eligible to receive an updated synthesizer when:
+// - They haven't ever been synthesized (they'll use the latest inputs anyway)
+// - They are already on the latest version of the synthesizer
+// - They are currently being synthesized or deleted
+// - They are already pending resynthesis
+// - They are already in sync with the latest synth
+// - Their input revisions are not in lockstep
+// - They're ignoring side effects
+func (c *Composition) NotEligibleForResynthesis(syn *Synthesizer) bool {
+	return c.Status.CurrentSynthesis == nil ||
+		c.Status.CurrentSynthesis.Synthesized == nil ||
+		c.DeletionTimestamp != nil ||
+		c.Status.PendingResynthesis != nil ||
+		c.IsInSync(syn) ||
+		c.InputsOutOfLockstep(syn) ||
+		c.ShouldIgnoreSideEffects()
+}
+
+func (c *Composition) IsInSync(syn *Synthesizer) bool {
+	return c.Status.CurrentSynthesis.ObservedSynthesizerGeneration >= syn.Generation
+}
